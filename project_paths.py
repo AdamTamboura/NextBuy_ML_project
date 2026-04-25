@@ -14,6 +14,7 @@ def find_project_root(start: Path | None = None) -> Path:
 PROJECT_ROOT = find_project_root()
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
+PROCESSED_DATA_DIR = DATA_DIR / "processed"
 
 
 def raw_data_file(filename: str) -> Path:
