@@ -23,6 +23,7 @@ from src.data.commun_preprocessing import (  # noqa: E402
     temporal_user_split,
     add_features,
     prepare_xy,
+    add_test_features_from_train,
 )
 from src.data.evluation_fonc import evaluate_model  # noqa: E402
 
@@ -31,12 +32,13 @@ METRICS_DIR = ROOT / "outputs" / "metrics"
 
 def main() -> None:
     dataset_path = PROCESSED_DATA_DIR / "nextbuy.pkl.gz"
+
     df = pd.read_pickle(dataset_path, compression="gzip")
 
     train_df, test_df = temporal_user_split(df)
 
     train_df = add_features(train_df)
-    test_df = add_features(test_df)
+    test_df =add_test_features_from_train(train_df, test_df)
 
     X_train, y_train = prepare_xy(train_df)
     X_test, y_test = prepare_xy(test_df)

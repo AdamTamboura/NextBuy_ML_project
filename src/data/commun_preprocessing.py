@@ -19,7 +19,7 @@ FEATURES = [
 TARGET = "reordered"
 
 
-#Fonction original de split enlève notamment  certain potentiels data-leak du train-set.
+#Fonction original de split enlève notamment  certain data-leak du train-set.
 
 def temporal_user_split(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = df.sort_values(["user_id", "order_number"])
@@ -52,6 +52,58 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df
+
+#fonction qui ajoute les features du train esentielles pour une bonne prédiction tout en évitant le data-leak
+
+def add_test_features_from_train(
+    train_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+) -> pd.DataFrame:
+    test_df = test_df.copy()
+
+    user_product_count = (
+        train_df.groupby(["user_id", "product_id"])["order_id"]
+        .nunique()
+        .reset_index(name="user_product_count")
+    )
+
+    user_recency = (
+        train_df.groupby("user_id")["days_since_prior_order"]
+        .mean()
+        .reset_index(name="user_recency")
+    )
+
+    product_popularity = (
+        train_df.groupby("product_id")["order_id"]
+        .nunique()
+        .reset_index(name="product_popularity")
+    )
+
+    test_df = test_df.merge(
+        user_product_count,
+        on=["user_id", "product_id"],
+        how="left",
+    )
+
+    test_df = test_df.merge(
+        user_recency,
+        on="user_id",
+        how="left",
+    )
+
+    test_df = test_df.merge(
+        product_popularity,
+        on="product_id",
+        how="left",
+    )
+
+    test_df["user_product_count"] = test_df["user_product_count"].fillna(0)
+    test_df["user_recency"] = test_df["user_recency"].fillna(
+        train_df["days_since_prior_order"].mean()
+    )
+    test_df["product_popularity"] = test_df["product_popularity"].fillna(0)
+
+    return test_df
 
 #fonction qui fait un data cleaning de base et récupérer X(paramètres) et y(cible)
 def prepare_xy(df: pd.DataFrame):
